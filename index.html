@@ -12,29 +12,34 @@
             padding: 0;
             font-family: 'Poppins', sans-serif;
             display: flex;
-            justify-content: center;
+            flex-direction: column;
             align-items: center;
+            justify-content: flex-start;
             height: 100vh;
             transition: background-color 0.3s;
+            overflow: hidden;
         }
 
         .container {
             text-align: center;
+            position: relative;
+            width: 100%;
         }
 
         .game-title {
-            font-size: 24px;
-            margin-bottom: 10px;
+            font-size: 32px;
+            font-weight: 600;
+            margin: 15px 0;
         }
 
-        .level, .highscore {
-            font-weight: 300; /* Thinner font style for level */
+        .level {
+            font-weight: 300;
             font-size: 18px;
             margin: 5px 0;
         }
 
         .score {
-            font-size: 24px;
+            font-size: 32px;
             margin: 5px 0;
             transition: color 0.3s;
         }
@@ -42,14 +47,11 @@
         .grid-container {
             display: grid;
             justify-content: center;
-            gap: 10px;
-            margin-top: 20px;
+            gap: 5px; /* Reduced the gap between tiles */
+            margin: 20px 0;
         }
 
         .tile {
-            width: 55px; /* Increased by 10% */
-            height: 55px; /* Increased by 10% */
-            background-color: #8ebf42;
             cursor: pointer;
             border-radius: 10px;
             transition: transform 0.3s, box-shadow 0.3s;
@@ -63,12 +65,12 @@
         .start-button, .restart-button, .share-button {
             padding: 10px 20px;
             font-size: 16px;
-            margin: 15px;
+            margin: 15px 0;
             cursor: pointer;
             border: none;
             background-color: #8ebf42;
             color: #fff;
-            border-radius: 5px;
+            border-radius: 20px; /* Rounded corners for buttons */
             transition: background-color 0.3s;
         }
 
@@ -93,12 +95,12 @@
         }
 
         .mode-toggle {
-            position: fixed;
+            position: absolute;
             bottom: 10px;
             display: flex;
             justify-content: center;
-            width: 100%;
             align-items: center;
+            width: 100%;
         }
 
         .switch {
@@ -160,13 +162,19 @@
             background-color: #f0f0f0;
             color: #333;
         }
+
+        .highscore {
+            font-weight: 300;
+            font-size: 18px;
+            margin: 5px 0;
+        }
     </style>
 </head>
 <body class="dark-mode">
     <div class="container">
         <h2 class="game-title">ColorTest</h2>
         <h4 class="level">Level: <span id="level-number">1</span></h4>
-        <h2 class="score"><span id="score-number">0</span></h2>
+        <h1 class="score"><span id="score-number">0</span></h1>
         <div class="grid-container">
             <!-- Grid tiles will be generated here by JavaScript -->
         </div>
@@ -198,6 +206,7 @@
         let correctTile = null;
         let tiles = [];
         let gameInProgress = false;
+        let restartCount = 0;
 
         const levelNumber = document.getElementById('level-number');
         const scoreNumber = document.getElementById('score-number');
@@ -222,15 +231,19 @@
             if (roundCount >= rounds) {
                 level++;
                 if (level <= 3) {
-                    gridSize = level + 1; // 2x2 for level 1, 3x3 for level 2, etc.
-                    rounds = 5;
+                    gridSize = level + 1; // 2x2 for level 1, 3x3 for level 2, 4x4 for level 3
+                    rounds = 5; // Set correct rounds for level 1 to 3
                 } else {
+                    gridSize = Math.min(12, gridSize + 1); // Increment grid size until 12x12
                     rounds = 7 + (level - 4) * 2; // Increase rounds from level 4
                 }
                 roundCount = 0;
             }
 
-            gridContainer.style.gridTemplateColumns = `repeat(${gridSize}, 1fr)`; // Update grid size
+            // Set grid size and adjust tile size based on grid size
+            const tileSize = Math.min(80, 320 / gridSize); // Larger tiles for smaller grids
+            gridContainer.style.gridTemplateColumns = `repeat(${gridSize}, ${tileSize}px)`;
+            gridContainer.style.gridTemplateRows = `repeat(${gridSize}, ${tileSize}px)`;
             gridContainer.innerHTML = '';
             roundCount++;
 
@@ -239,6 +252,8 @@
             tiles = Array.from({ length: gridSize * gridSize }).map((_, index) => {
                 const tile = document.createElement('div');
                 tile.classList.add('tile');
+                tile.style.width = `${tileSize}px`;
+                tile.style.height = `${tileSize}px`;
                 if (index === correctTile) {
                     tile.style.backgroundColor = adjustColor(baseColor, variation);
                 } else {
@@ -248,19 +263,20 @@
                 gridContainer.appendChild(tile);
                 return tile;
             });
-
-            updateLevelAndScore();
-            if (level >= 12) variation = 6; // Adjust variation to 6% from level 12 onwards
         }
 
         function onTileClick(index) {
             if (!gameInProgress) return;
 
             if (index === correctTile) {
-                score += 1;
+                score += 5;
+                updateLevelAndScore();
                 updateScoreColor();
                 animateCorrectTile(tiles[index]);
-                setTimeout(generateGrid, 500); // Wait before generating new grid
+                if (roundCount >= rounds) {
+                    variation = Math.max(6, variation - 0.3);
+                }
+                setTimeout(generateGrid, 500);
             } else {
                 gameOver();
             }
@@ -268,9 +284,7 @@
 
         function animateCorrectTile(tile) {
             tile.classList.add('correct');
-            setTimeout(() => {
-                tile.classList.remove('correct');
-            }, 300);
+            setTimeout(() => tile.classList.remove('correct'), 500);
         }
 
         function updateLevelAndScore() {
@@ -279,9 +293,12 @@
         }
 
         function updateScoreColor() {
-            // Update score color based on progression
-            const colorGradient = ['#ff0000', '#ff6600', '#ffcc00', '#66cc00', '#00cc00'];
-            let colorIndex = Math.min(Math.floor(score / 10), colorGradient.length - 1);
+            const maxScore = 150;
+            const colorGradient = [
+                'rgb(255,0,0)', 'rgb(255,128,0)', 'rgb(255,255,0)',
+                'rgb(128,255,0)', 'rgb(0,255,0)'
+            ];
+            const colorIndex = Math.min(Math.floor((score / maxScore) * colorGradient.length), colorGradient.length - 1);
             scoreNumber.style.color = colorGradient[colorIndex];
         }
 
@@ -300,8 +317,6 @@
 
         function gameOver() {
             gameInProgress = false;
-            alert("😣 Uh-huh! Try relaxing your eyes for 10 minutes! 😌");
-
             if (score > highscore) {
                 highscore = score;
                 localStorage.setItem('highscore', highscore);
@@ -310,6 +325,10 @@
 
             gameOverScreen.classList.add('active');
             updateGameOverMessage(score);
+
+            if (restartCount > 9) {
+                alert("😣 Uh-huh! Try relaxing your eyes for 10 minutes! 😌");
+            }
         }
 
         function updateGameOverMessage(score) {
@@ -332,11 +351,14 @@
         }
 
         function restartGame() {
+            restartCount++;
             gameOverScreen.classList.remove('active');
             level = 1;
             score = 0;
             gridSize = 2;
-            rounds = 5;
+            rounds = 5; // Ensure rounds reset correctly for level 1
+            variation = 9; // Reset the color variation
+            scoreNumber.style.color = 'rgb(255,0,0)'; // Reset score color to red
             gameInProgress = true;
             generateGrid();
         }
