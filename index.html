@@ -259,15 +259,12 @@
                     rounds = 5; // Reset rounds to 5 for levels 1, 2, and 3
                 } else {
                     gridSize = Math.min(9, gridSize + 1); // Max grid size capped at 9x9
-                    rounds = 7 + (level - 4) * 2; // Increase rounds from level 4
-
-                    // Reduce gap for all levels
-                    gridContainer.style.gap = '5px'; // Default grid gap for all levels
+                    rounds = (level === 4) ? 7 : (level * 2 - 1); // Set rounds for level 4 and onward
                 }
                 roundCount = 0;
             }
 
-            const tileSize = Math.min(80, 320 / gridSize); // Larger tiles for smaller grids
+            const tileSize = Math.min(80, 320 / gridSize); // Adjust tile size based on grid size
             gridContainer.style.gridTemplateColumns = `repeat(${gridSize}, ${tileSize}px)`;
             gridContainer.style.gridTemplateRows = `repeat(${gridSize}, ${tileSize}px)`;
             gridContainer.innerHTML = ''; // Clear the previous grid
@@ -282,7 +279,7 @@
                 tile.style.height = `${tileSize}px`;
 
                 // Apply roundness based on level
-                tile.style.borderRadius = (level >= 5) ? '5px' : '10px';
+                tile.style.borderRadius = '5px'; // Set roundness to 5px for all levels
 
                 // Assign background color and adjust for variation
                 tile.style.backgroundColor = index === correctTile ? adjustColor(baseColor, variation) : baseColor;
