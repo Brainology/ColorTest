@@ -153,7 +153,7 @@
 
         .mode-label {
             font-size: 12px;
-            margin: 0 10px;
+            margin: 0 20px; /* Added margin to center text and switch */
         }
 
         .dark-mode {
@@ -204,7 +204,7 @@
         let level = 1;
         let score = 0;
         let gridSize = 2;
-        let rounds = 5; // Ensure rounds are 5 for level 1
+        let rounds = 5;
         let roundCount = 0;
         let variation = 9;
         let correctTile = null;
@@ -259,11 +259,12 @@
                 tile.style.width = `${tileSize}px`;
                 tile.style.height = `${tileSize}px`;
                 if (index === correctTile) {
+                    tile.classList.add('correct-tile'); // Added this class for correct tile
                     tile.style.backgroundColor = adjustColor(baseColor, variation);
                 } else {
                     tile.style.backgroundColor = baseColor;
                 }
-                tile.addEventListener('click', () => onTileClick(index));
+                tile.addEventListener('click', () => onTileClick(index)); // Attach event listener
                 gridContainer.appendChild(tile);
                 return tile;
             });
@@ -274,18 +275,19 @@
         function onTileClick(index) {
             if (!gameInProgress) return;
 
+            // If the clicked tile is the correct one
             if (index === correctTile) {
                 score += 1;
                 updateScoreColor();
                 animateCorrectTile(tiles[index]);
-                
+
                 // Stop the game if score reaches 150
                 if (score >= 150) {
                     displayWinMessage();
                     return;
                 }
 
-                setTimeout(generateGrid, 500);
+                setTimeout(generateGrid, 500); // Generate a new grid after a short delay
             } else {
                 gameOver();
             }
@@ -323,6 +325,11 @@
             let rgb = color.match(/\d+/g);
             rgb = rgb.map(channel => Math.max(0, Math.min(255, channel * (1 - variation / 100))));
             return `rgb(${rgb.join(',')})`;
+        }
+
+        function animateCorrectTile(tile) {
+            tile.classList.add('correct');
+            setTimeout(() => tile.classList.remove('correct'), 500);
         }
 
         function gameOver() {
