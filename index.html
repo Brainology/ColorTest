@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ColorTest</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
         * {
             box-sizing: border-box;
@@ -20,12 +21,13 @@
             align-items: center;
             height: 100vh;
             overflow: hidden;
+            transition: background-color 0.3s ease, color 0.3s ease;
         }
         .light-mode {
             background-color: #f9f9f9;
             color: #222;
         }
-        h1, h4 {
+        h1, h4, h2 {
             text-align: center;
         }
         h1 {
@@ -36,15 +38,19 @@
             font-weight: 300;
             margin-bottom: 5px;
         }
+        h2 {
+            font-size: 3rem;
+            font-weight: bold;
+            margin-bottom: 20px;
+            text-align: center;
+        }
         #score {
             font-size: 3rem;
-            margin-bottom: 20px;
             font-weight: bold;
-            text-align: center;
         }
         #grid {
             display: grid;
-            gap: 10px; /* Reduced by 5% as requested */
+            gap: 10px;
         }
         #highscore {
             margin-top: 20px;
@@ -56,14 +62,12 @@
             transition: all 0.3s ease;
             cursor: pointer;
         }
-        .tile.correct {
-            border: 2px solid #00ff00;
-        }
         button {
             padding: 10px 20px;
             font-size: 1.2rem;
             border-radius: 8px;
             cursor: pointer;
+            margin-bottom: 20px;
         }
         #mode-switch {
             position: fixed;
@@ -107,14 +111,6 @@
         input:checked + span:before {
             transform: translateX(25px);
         }
-        input:checked + span:after {
-            content: 'Light Mode';
-            position: absolute;
-            left: 70px;
-            top: 4px;
-            color: white;
-            font-size: 0.8rem;
-        }
         .hidden {
             display: none;
         }
@@ -128,10 +124,13 @@
     <!-- Title and Game Info -->
     <h1 id="game-title">Color Test</h1>
     <h4 id="level-number">Level 1</h4>
-    <h1 id="score">0</h1>
+    <h2 id="score">0</h2>
+
+    <!-- Start Game Button -->
+    <button id="start-button">Tap to Start</button>
 
     <!-- Game Grid -->
-    <div id="grid" class="centered"></div>
+    <div id="grid" class="centered hidden"></div>
 
     <!-- Highscore -->
     <div id="highscore">Highscore: <span id="highscore-number">0</span></div>
@@ -153,6 +152,7 @@
         const highscoreNumber = document.getElementById('highscore-number');
         const modeToggle = document.getElementById('toggle-mode');
         const body = document.body;
+        const startButton = document.getElementById('start-button');
 
         let level = 1;
         let score = 0;
@@ -164,6 +164,7 @@
 
         highscoreNumber.textContent = highscore;
 
+        // Handle theme toggle
         modeToggle.addEventListener('change', function () {
             if (this.checked) {
                 body.classList.remove('dark-mode');
@@ -172,6 +173,13 @@
                 body.classList.remove('light-mode');
                 body.classList.add('dark-mode');
             }
+        });
+
+        // Handle start game
+        startButton.addEventListener('click', function () {
+            startButton.classList.add('hidden'); // Hide the button
+            grid.classList.remove('hidden'); // Show the grid
+            startGame();
         });
 
         function startGame() {
@@ -191,8 +199,8 @@
                 const tile = document.createElement('div');
                 tile.classList.add('tile');
                 tile.style.backgroundColor = i === randomTile ? adjustColor(getRandomColor(), variation) : getRandomColor();
-                tile.style.width = '50px'; // Increase tile size by 10% as requested
-                tile.style.height = '50px';
+                tile.style.width = '70px'; // Larger tile size at the start
+                tile.style.height = '70px';
                 tile.addEventListener('click', () => onTileClick(i, randomTile));
                 grid.appendChild(tile);
             }
@@ -244,6 +252,8 @@
         function gameOver() {
             gameInProgress = false;
             alert('Game Over! Try again.');
+            startButton.classList.remove('hidden'); // Show the button again
+            grid.classList.add('hidden'); // Hide the grid
         }
     </script>
 
