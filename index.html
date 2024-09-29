@@ -204,7 +204,7 @@
         let level = 1;
         let score = 0;
         let gridSize = 2;
-        let rounds = 5;
+        let rounds = 5; // Ensure rounds are 5 for level 1
         let roundCount = 0;
         let variation = 9;
         let correctTile = null;
@@ -236,7 +236,7 @@
                 level++;
                 if (level <= 3) {
                     gridSize = level + 1; // 2x2 for level 1, 3x3 for level 2, 4x4 for level 3
-                    rounds = 5;
+                    rounds = 5; // Ensure rounds reset to 5 for levels 1, 2, and 3
                 } else {
                     gridSize = Math.min(12, gridSize + 1); // Increment grid size until 12x12
                     rounds = 7 + (level - 4) * 2; // Increase rounds from level 4
@@ -269,7 +269,6 @@
             });
 
             updateLevelAndScore();
-            if (level >= 12) variation = 6; // Adjust variation to 6% from level 12 onwards
         }
 
         function onTileClick(index) {
@@ -296,11 +295,6 @@
             gameInProgress = false;
             gameOverScreen.classList.add('active');
             gameOverMessage.textContent = "🎉 Woo-hoo! Congratulations! You have eagle eyes! 🦅 Share your achievement and invite friends to test their skills too! 📣";
-        }
-
-        function animateCorrectTile(tile) {
-            tile.classList.add('correct');
-            setTimeout(() => tile.classList.remove('correct'), 500);
         }
 
         function updateLevelAndScore() {
@@ -372,7 +366,7 @@
             level = 1;
             score = 0;
             gridSize = 2;
-            rounds = 5;
+            rounds = 5; // Ensure rounds reset to 5 for Level 1
             variation = 9; // Reset the color variation
             scoreNumber.style.color = 'rgb(255,0,0)'; // Reset score color to red
             gameInProgress = true;
