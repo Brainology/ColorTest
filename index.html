@@ -50,7 +50,7 @@
             display: grid;
             justify-content: center;
             margin-top: 20px;
-            transition: gap 0.3s;
+            gap: 10px; /* Default grid gap */
         }
 
         .tile {
@@ -96,7 +96,6 @@
             color: #fff;
         }
 
-        /* Fix the toggle switch position to avoid movement */
         .mode-toggle {
             position: fixed;
             bottom: 20px;
@@ -114,7 +113,7 @@
         .toggle-container label {
             font-size: 18px;
             margin-right: 10px;
-            font-weight: bold; /* Make text slightly bolder */
+            font-weight: bold;
             transition: color 0.3s;
         }
 
@@ -186,7 +185,7 @@
         <h2 class="game-title">ColorTest</h2>
         <h1 class="score"><span id="score-number">0</span></h1>
         <h4 class="level">Level: <span id="level-number">1</span></h4>
-        <div class="grid-container">
+        <div class="grid-container" id="grid-container">
             <!-- Grid tiles will be generated here by JavaScript -->
         </div>
         <div class="highscore">Highscore: <span id="highscore-number">0</span></div>
@@ -198,7 +197,6 @@
             <button class="share-button" onclick="shareGame()">Share</button>
         </div>
 
-        <!-- Custom toggle switch for Dark Theme, centered properly -->
         <div class="mode-toggle">
             <div class="toggle-container">
                 <label for="mode-switch" id="dark-theme-label">Dark Theme</label>
@@ -208,7 +206,6 @@
                 </label>
             </div>
         </div>
-
     </div>
     <script>
         let level = 1;
@@ -224,14 +221,13 @@
 
         const levelNumber = document.getElementById('level-number');
         const scoreNumber = document.getElementById('score-number');
-        const gridContainer = document.querySelector('.grid-container');
+        const gridContainer = document.getElementById('grid-container');
         const startButton = document.querySelector('.start-button');
         const gameOverScreen = document.querySelector('.game-over');
         const gameOverMessage = document.getElementById('game-over-message');
         const highscoreNumber = document.getElementById('highscore-number');
         const darkThemeLabel = document.getElementById('dark-theme-label');
         
-        // Retrieve highscore from localStorage
         let highscore = localStorage.getItem('highscore') || 0;
         highscoreNumber.textContent = highscore;
 
@@ -253,13 +249,7 @@
                 } else {
                     gridSize = Math.min(9, gridSize + 1); // Max grid size capped at 9x9
                     rounds = 7 + (level - 4) * 2; // Increase rounds from level 4
-
-                    // Reduce grid spacing and tile roundness starting from Level 5
                     gridContainer.style.gap = (level >= 5) ? '5px' : '10px'; // Reduce gap to 5px for larger grids
-
-                    // Reduce tile roundness from Level 5 onwards
-                    const tileRadius = (level >= 5) ? '5px' : '10px';
-
                 }
                 roundCount = 0;
             }
@@ -277,7 +267,9 @@
                 tile.classList.add('tile');
                 tile.style.width = `${tileSize}px`;
                 tile.style.height = `${tileSize}px`;
-                tile.style.borderRadius = tileRadius; // Apply tile roundness based on level
+
+                // Apply roundness based on level
+                tile.style.borderRadius = (level >= 5) ? '5px' : '10px';
 
                 // Assign background color and adjust for variation
                 tile.style.backgroundColor = index === correctTile ? adjustColor(baseColor, variation) : baseColor;
