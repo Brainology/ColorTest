@@ -6,53 +6,57 @@
     <title>ColorTest</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;600&display=swap" rel="stylesheet">
     <style>
-        /* CSS styles */
+        /* General CSS */
         body, html {
             margin: 0;
             padding: 0;
             font-family: 'Poppins', sans-serif;
             display: flex;
-            justify-content: center;
+            flex-direction: column;
             align-items: center;
+            justify-content: flex-start;
             height: 100vh;
-            transition: background-color 0.3s;
+            transition: background-color 0.3s, color 0.3s;
+            overflow: hidden;
         }
 
         .container {
             text-align: center;
+            width: 100%;
         }
 
         .game-title {
-            font-size: 24px;
-            margin-bottom: 10px;
-        }
-
-        .level, .highscore {
-            font-weight: 300; /* Thinner font style for level */
-            font-size: 18px;
-            margin: 5px 0;
+            font-size: 32px;
+            font-weight: 600;
+            margin-top: 20px;
+            text-align: center;
         }
 
         .score {
-            font-size: 24px;
-            margin: 5px 0;
+            font-size: 32px;
+            margin: 10px 0;
             transition: color 0.3s;
+            text-align: center;
+        }
+
+        .level {
+            font-weight: 300;
+            font-size: 18px;
+            margin-bottom: 20px;
+            text-align: center;
         }
 
         .grid-container {
             display: grid;
             justify-content: center;
-            gap: 10px;
             margin-top: 20px;
+            gap: 5px; /* Reduced grid gap by default */
         }
 
         .tile {
-            width: 55px; /* Increased by 10% */
-            height: 55px; /* Increased by 10% */
-            background-color: #8ebf42;
             cursor: pointer;
-            border-radius: 10px;
-            transition: transform 0.3s, box-shadow 0.3s;
+            border-radius: 5px; /* Reduced tile roundness by default */
+            transition: transform 0.3s, box-shadow 0.3s, border-radius 0.3s;
         }
 
         .tile.correct {
@@ -63,12 +67,12 @@
         .start-button, .restart-button, .share-button {
             padding: 10px 20px;
             font-size: 16px;
-            margin: 15px;
+            margin: 15px 0;
             cursor: pointer;
             border: none;
             background-color: #8ebf42;
             color: #fff;
-            border-radius: 5px;
+            border-radius: 20px;
             transition: background-color 0.3s;
         }
 
@@ -94,18 +98,30 @@
 
         .mode-toggle {
             position: fixed;
-            bottom: 10px;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
             display: flex;
-            justify-content: center;
-            width: 100%;
             align-items: center;
+        }
+
+        .toggle-container {
+            display: flex;
+            align-items: center;
+        }
+
+        .toggle-container label {
+            font-size: 18px;
+            margin-right: 10px;
+            font-weight: bold;
+            transition: color 0.3s;
         }
 
         .switch {
             position: relative;
             display: inline-block;
             width: 60px;
-            height: 34px;
+            height: 30px;
         }
 
         .switch input {
@@ -123,7 +139,7 @@
             bottom: 0;
             background-color: #ccc;
             transition: 0.4s;
-            border-radius: 34px;
+            border-radius: 30px;
         }
 
         .slider:before {
@@ -131,8 +147,8 @@
             content: "";
             height: 26px;
             width: 26px;
-            left: 4px;
-            bottom: 4px;
+            left: 2px;
+            bottom: 2px;
             background-color: white;
             transition: 0.4s;
             border-radius: 50%;
@@ -143,12 +159,7 @@
         }
 
         input:checked + .slider:before {
-            transform: translateX(26px);
-        }
-
-        .mode-label {
-            font-size: 12px;
-            margin: 0 10px;
+            transform: translateX(30px);
         }
 
         .dark-mode {
@@ -160,14 +171,21 @@
             background-color: #f0f0f0;
             color: #333;
         }
+
+        .highscore {
+            font-weight: 300;
+            font-size: 18px;
+            margin: 5px 0;
+            text-align: center;
+        }
     </style>
 </head>
 <body class="dark-mode">
     <div class="container">
         <h2 class="game-title">ColorTest</h2>
+        <h1 class="score"><span id="score-number">0</span></h1>
         <h4 class="level">Level: <span id="level-number">1</span></h4>
-        <h2 class="score"><span id="score-number">0</span></h2>
-        <div class="grid-container">
+        <div class="grid-container" id="grid-container">
             <!-- Grid tiles will be generated here by JavaScript -->
         </div>
         <div class="highscore">Highscore: <span id="highscore-number">0</span></div>
@@ -178,17 +196,18 @@
             <button class="restart-button" onclick="restartGame()">Restart</button>
             <button class="share-button" onclick="shareGame()">Share</button>
         </div>
+
         <div class="mode-toggle">
-            <span class="mode-label">Light Mode</span>
-            <label class="switch">
-                <input type="checkbox" id="mode-switch" onchange="toggleMode()">
-                <span class="slider"></span>
-            </label>
-            <span class="mode-label">Dark Mode</span>
+            <div class="toggle-container">
+                <label for="mode-switch" id="dark-theme-label">Dark Theme</label>
+                <label class="switch">
+                    <input type="checkbox" id="mode-switch" onchange="toggleMode()">
+                    <span class="slider"></span>
+                </label>
+            </div>
         </div>
     </div>
     <script>
-        // JavaScript code
         let level = 1;
         let score = 0;
         let gridSize = 2;
@@ -198,16 +217,17 @@
         let correctTile = null;
         let tiles = [];
         let gameInProgress = false;
+        let restartCount = 0;
 
         const levelNumber = document.getElementById('level-number');
         const scoreNumber = document.getElementById('score-number');
-        const gridContainer = document.querySelector('.grid-container');
+        const gridContainer = document.getElementById('grid-container');
         const startButton = document.querySelector('.start-button');
         const gameOverScreen = document.querySelector('.game-over');
         const gameOverMessage = document.getElementById('game-over-message');
         const highscoreNumber = document.getElementById('highscore-number');
+        const darkThemeLabel = document.getElementById('dark-theme-label');
         
-        // Retrieve highscore from localStorage
         let highscore = localStorage.getItem('highscore') || 0;
         highscoreNumber.textContent = highscore;
 
@@ -215,23 +235,23 @@
             startButton.style.display = 'none';
             gameInProgress = true;
             roundCount = 0;
+            level = 1;  // Ensure the game starts at Level 1
+            rounds = 5; // Reset rounds to 5 for Level 1
             generateGrid();
         }
 
         function generateGrid() {
             if (roundCount >= rounds) {
                 level++;
-                if (level <= 3) {
-                    gridSize = level + 1; // 2x2 for level 1, 3x3 for level 2, etc.
-                    rounds = 5;
-                } else {
-                    rounds = 7 + (level - 4) * 2; // Increase rounds from level 4
-                }
+                gridSize = Math.min(9, gridSize + 1); // Max grid size capped at 9x9
+                rounds = 7 + (level - 4) * 2; // Increase rounds from level 4
                 roundCount = 0;
             }
 
-            gridContainer.style.gridTemplateColumns = `repeat(${gridSize}, 1fr)`; // Update grid size
-            gridContainer.innerHTML = '';
+            const tileSize = Math.min(80, 320 / gridSize); // Larger tiles for smaller grids
+            gridContainer.style.gridTemplateColumns = `repeat(${gridSize}, ${tileSize}px)`;
+            gridContainer.style.gridTemplateRows = `repeat(${gridSize}, ${tileSize}px)`;
+            gridContainer.innerHTML = ''; // Clear the previous grid
             roundCount++;
 
             const baseColor = getRandomColor();
@@ -239,18 +259,22 @@
             tiles = Array.from({ length: gridSize * gridSize }).map((_, index) => {
                 const tile = document.createElement('div');
                 tile.classList.add('tile');
-                if (index === correctTile) {
-                    tile.style.backgroundColor = adjustColor(baseColor, variation);
-                } else {
-                    tile.style.backgroundColor = baseColor;
-                }
+                tile.style.width = `${tileSize}px`;
+                tile.style.height = `${tileSize}px`;
+
+                // Apply roundness and reduced spacing by default
+                tile.style.borderRadius = '5px';
+
+                // Assign background color and adjust for variation
+                tile.style.backgroundColor = index === correctTile ? adjustColor(baseColor, variation) : baseColor;
+
+                // Add click event listener for tile selection
                 tile.addEventListener('click', () => onTileClick(index));
                 gridContainer.appendChild(tile);
                 return tile;
             });
 
             updateLevelAndScore();
-            if (level >= 12) variation = 6; // Adjust variation to 6% from level 12 onwards
         }
 
         function onTileClick(index) {
@@ -260,17 +284,28 @@
                 score += 1;
                 updateScoreColor();
                 animateCorrectTile(tiles[index]);
-                setTimeout(generateGrid, 500); // Wait before generating new grid
+
+                // Stop the game if score reaches 150 and update highscore
+                if (score >= 150) {
+                    displayWinMessage();
+                    if (score > highscore) {
+                        highscore = score;
+                        localStorage.setItem('highscore', highscore);
+                        highscoreNumber.textContent = highscore;
+                    }
+                    return;
+                }
+
+                setTimeout(generateGrid, 500); // Generate a new grid after a short delay
             } else {
                 gameOver();
             }
         }
 
-        function animateCorrectTile(tile) {
-            tile.classList.add('correct');
-            setTimeout(() => {
-                tile.classList.remove('correct');
-            }, 300);
+        function displayWinMessage() {
+            gameInProgress = false;
+            gameOverScreen.classList.add('active');
+            gameOverMessage.textContent = "🎉 Woo-hoo! Congratulations! You have eagle eyes! 🦅 Share your achievement and invite friends to test their skills too! 📣";
         }
 
         function updateLevelAndScore() {
@@ -279,9 +314,12 @@
         }
 
         function updateScoreColor() {
-            // Update score color based on progression
-            const colorGradient = ['#ff0000', '#ff6600', '#ffcc00', '#66cc00', '#00cc00'];
-            let colorIndex = Math.min(Math.floor(score / 10), colorGradient.length - 1);
+            const maxScore = 150;
+            const colorGradient = [
+                'rgb(255,0,0)', 'rgb(255,128,0)', 'rgb(255,255,0)',
+                'rgb(128,255,0)', 'rgb(0,255,0)'
+            ];
+            const colorIndex = Math.min(Math.floor((score / maxScore) * colorGradient.length), colorGradient.length - 1);
             scoreNumber.style.color = colorGradient[colorIndex];
         }
 
@@ -298,10 +336,13 @@
             return `rgb(${rgb.join(',')})`;
         }
 
+        function animateCorrectTile(tile) {
+            tile.classList.add('correct');
+            setTimeout(() => tile.classList.remove('correct'), 500);
+        }
+
         function gameOver() {
             gameInProgress = false;
-            alert("😣 Uh-huh! Try relaxing your eyes for 10 minutes! 😌");
-
             if (score > highscore) {
                 highscore = score;
                 localStorage.setItem('highscore', highscore);
@@ -310,6 +351,10 @@
 
             gameOverScreen.classList.add('active');
             updateGameOverMessage(score);
+
+            if (restartCount > 9) {
+                alert("😣 Uh-huh! Try relaxing your eyes for 10 minutes! 😌");
+            }
         }
 
         function updateGameOverMessage(score) {
@@ -332,11 +377,14 @@
         }
 
         function restartGame() {
+            restartCount++;
             gameOverScreen.classList.remove('active');
             level = 1;
             score = 0;
             gridSize = 2;
-            rounds = 5;
+            rounds = 5; // Ensure rounds reset to 5 for Level 1
+            variation = 9; // Reset the color variation
+            scoreNumber.style.color = 'rgb(255,0,0)'; // Reset score color to red
             gameInProgress = true;
             generateGrid();
         }
@@ -354,6 +402,7 @@
             const body = document.body;
             body.classList.toggle('light-mode');
             body.classList.toggle('dark-mode');
+            darkThemeLabel.style.color = body.classList.contains('light-mode') ? '#333' : '#fff'; // Change text color on theme toggle
         }
 
         // Initiate with dark mode
