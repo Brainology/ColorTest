@@ -50,12 +50,12 @@
             display: grid;
             justify-content: center;
             margin-top: 20px;
-            gap: 5px; /* Reduced grid gap by default */
+            gap: 5px; /* Default grid gap reduced for all levels */
         }
 
         .tile {
             cursor: pointer;
-            border-radius: 5px; /* Reduced tile roundness by default */
+            border-radius: 5px; /* Default roundness reduced for all levels */
             transition: transform 0.3s, box-shadow 0.3s, border-radius 0.3s;
         }
 
@@ -98,7 +98,7 @@
 
         .mode-toggle {
             position: fixed;
-            bottom: 20px;
+            bottom: 50px; /* Adjusted position to provide space for the attribution text */
             left: 50%;
             transform: translateX(-50%);
             display: flex;
@@ -178,6 +178,14 @@
             margin: 5px 0;
             text-align: center;
         }
+
+        /* Attribution text styling */
+        .attribution {
+            font-size: 10px; /* Smallest size */
+            color: #777; /* Default color for dark mode */
+            transition: color 0.3s;
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body class="dark-mode">
@@ -206,6 +214,8 @@
                 </label>
             </div>
         </div>
+        
+        <div class="attribution" id="attribution-text">Made with ❤️ by H Brave for 🌏</div>
     </div>
     <script>
         let level = 1;
@@ -227,6 +237,7 @@
         const gameOverMessage = document.getElementById('game-over-message');
         const highscoreNumber = document.getElementById('highscore-number');
         const darkThemeLabel = document.getElementById('dark-theme-label');
+        const attributionText = document.getElementById('attribution-text');
         
         let highscore = localStorage.getItem('highscore') || 0;
         highscoreNumber.textContent = highscore;
@@ -243,8 +254,16 @@
         function generateGrid() {
             if (roundCount >= rounds) {
                 level++;
-                gridSize = Math.min(9, gridSize + 1); // Max grid size capped at 9x9
-                rounds = 7 + (level - 4) * 2; // Increase rounds from level 4
+                if (level <= 3) {
+                    gridSize = level + 1; // 2x2 for level 1, 3x3 for level 2, 4x4 for level 3
+                    rounds = 5; // Reset rounds to 5 for levels 1, 2, and 3
+                } else {
+                    gridSize = Math.min(9, gridSize + 1); // Max grid size capped at 9x9
+                    rounds = 7 + (level - 4) * 2; // Increase rounds from level 4
+
+                    // Reduce gap for all levels
+                    gridContainer.style.gap = '5px'; // Default grid gap for all levels
+                }
                 roundCount = 0;
             }
 
@@ -262,8 +281,8 @@
                 tile.style.width = `${tileSize}px`;
                 tile.style.height = `${tileSize}px`;
 
-                // Apply roundness and reduced spacing by default
-                tile.style.borderRadius = '5px';
+                // Apply roundness based on level
+                tile.style.borderRadius = (level >= 5) ? '5px' : '10px';
 
                 // Assign background color and adjust for variation
                 tile.style.backgroundColor = index === correctTile ? adjustColor(baseColor, variation) : baseColor;
@@ -285,13 +304,14 @@
                 updateScoreColor();
                 animateCorrectTile(tiles[index]);
 
-                // Stop the game if score reaches 150 and update highscore
+                // Stop the game if score reaches 150
                 if (score >= 150) {
                     displayWinMessage();
+                    // Update high score if necessary
                     if (score > highscore) {
                         highscore = score;
                         localStorage.setItem('highscore', highscore);
-                        highscoreNumber.textContent = highscore;
+                        highscoreNumber.textContent = highscore; // Update displayed high score
                     }
                     return;
                 }
@@ -343,12 +363,6 @@
 
         function gameOver() {
             gameInProgress = false;
-            if (score > highscore) {
-                highscore = score;
-                localStorage.setItem('highscore', highscore);
-                highscoreNumber.textContent = highscore;
-            }
-
             gameOverScreen.classList.add('active');
             updateGameOverMessage(score);
 
@@ -379,14 +393,14 @@
         function restartGame() {
             restartCount++;
             gameOverScreen.classList.remove('active');
-            level = 1;
+            level = 1; // Ensure it resets to Level 1
             score = 0;
-            gridSize = 2;
+            gridSize = 2; // Reset to 2x2 for Level 1
             rounds = 5; // Ensure rounds reset to 5 for Level 1
             variation = 9; // Reset the color variation
             scoreNumber.style.color = 'rgb(255,0,0)'; // Reset score color to red
             gameInProgress = true;
-            generateGrid();
+            generateGrid(); // Start the game anew
         }
 
         function shareGame() {
@@ -403,6 +417,7 @@
             body.classList.toggle('light-mode');
             body.classList.toggle('dark-mode');
             darkThemeLabel.style.color = body.classList.contains('light-mode') ? '#333' : '#fff'; // Change text color on theme toggle
+            attributionText.style.color = body.classList.contains('light-mode') ? '#333' : '#fff'; // Change attribution color on theme toggle
         }
 
         // Initiate with dark mode
