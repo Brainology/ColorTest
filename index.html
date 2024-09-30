@@ -98,7 +98,7 @@
 
         .mode-toggle {
             position: fixed;
-            bottom: 80px;
+            bottom: 60px; /* Adjusted to give space for attribution */
             left: 50%;
             transform: translateX(-50%);
             display: flex;
@@ -190,6 +190,7 @@
             font-size: 16px;
             color: white;
             margin-top: 10px;
+            display: none;  /* Hidden by default */
         }
 
         .attribution {
@@ -197,7 +198,7 @@
             color: #777;
             transition: color 0.3s;
             position: fixed;
-            bottom: 20px;
+            bottom: 20px;  /* Adjusted to ensure proper spacing */
             left: 50%;
             transform: translateX(-50%);
             text-align: center;
@@ -237,7 +238,8 @@
                     <input type="checkbox" id="mode-switch" onchange="toggleMode()">
                     <span class="slider"></span>
                 </label>
-                </div>
+            </div>
+        </div>
 
         <div class="attribution" id="attribution-text">Made with ❤️ by H Brave for 🌏</div>
     </div>
@@ -287,7 +289,7 @@
             level = 1;
             rounds = 5;
             timeLeft = 20;
-            timerCircle.style.display = 'block'; // Show timer for Challenge Mode
+            timerCircle.style.display = 'block'; // Show timer only in Challenge Mode
             levelHeading.style.display = 'block';
             highscoreNumber.textContent = challengeHighscore;  // Show Challenge Mode highscore
             generateGrid();
@@ -340,7 +342,7 @@
             const tileSize = Math.min(80, 320 / gridSize);
             gridContainer.style.gridTemplateColumns = `repeat(${gridSize}, ${tileSize}px)`;
             gridContainer.style.gridTemplateRows = `repeat(${gridSize}, ${tileSize}px)`;
-            gridContainer.innerHTML = '';
+            gridContainer.innerHTML = '';  // Clear previous tiles
             roundCount++;
 
             const baseColor = getRandomColor();
