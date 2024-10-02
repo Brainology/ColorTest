@@ -6,7 +6,6 @@
     <title>ColorTest</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;600&display=swap" rel="stylesheet">
     <style>
-        /* General CSS */
         body, html {
             margin: 0;
             padding: 0;
@@ -49,9 +48,8 @@
         .grid-container {
             display: grid;
             justify-content: center;
-            align-items: center;
-            gap: 5px;
             margin-top: 20px;
+            gap: 5px;
         }
 
         .tile {
@@ -65,7 +63,7 @@
             box-shadow: 0 0 10px rgba(0, 255, 0, 0.7);
         }
 
-        .start-button, .restart-button, .share-button, .mode-button {
+        .start-button, .restart-button, .share-button, .continue-button {
             padding: 10px 20px;
             font-size: 16px;
             margin: 15px 0;
@@ -77,15 +75,19 @@
             transition: background-color 0.3s;
         }
 
-        .start-button:hover, .restart-button:hover, .share-button:hover, .mode-button:hover {
+        .continue-button {
+            border: 2px solid gold;
+        }
+
+        .start-button:hover, .restart-button:hover, .share-button:hover, .continue-button:hover {
             background-color: #6b9c32;
         }
 
-        .game-over, .mode-selection {
+        .game-over {
             display: none;
         }
 
-        .game-over.active, .mode-selection.active {
+        .game-over.active {
             display: block;
             position: absolute;
             top: 50%;
@@ -99,7 +101,7 @@
 
         .mode-toggle {
             position: fixed;
-            bottom: 60px;
+            bottom: 80px;
             left: 50%;
             transform: translateX(-50%);
             display: flex;
@@ -180,21 +182,11 @@
             text-align: center;
         }
 
-        .timer-circle {
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            background-color: #8ebf42;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 16px;
-            color: white;
-            position: fixed;
-            bottom: 100px; /* Adjusted for fixed position */
-            left: 50%;
-            transform: translateX(-50%);
-            display: none;  /* Hidden by default */
+        .timer {
+            font-size: 24px;
+            font-weight: bold;
+            color: red;
+            margin-bottom: 10px;
         }
 
         .attribution {
@@ -202,7 +194,7 @@
             color: #777;
             transition: color 0.3s;
             position: fixed;
-            bottom: 20px;  /* Adjusted to ensure proper spacing */
+            bottom: 20px;
             left: 50%;
             transform: translateX(-50%);
             text-align: center;
@@ -212,27 +204,24 @@
 <body class="dark-mode">
     <div class="container">
         <h2 class="game-title">ColorTest</h2>
-        <h1 class="score"><span id="score-number">0</span></h1>
-        <h4 class="level" id="level-heading">Level: <span id="level-number">1</span></h4>
-        <div class="grid-container" id="grid-container">
+        <button class="start-button" onclick="showModeSelection()">Tap to Start</button>
+        <div class="mode-selection" style="display: none;">
+            <button class="start-button" onclick="startEndlessMode()">Endless Mode</button>
+            <button class="start-button" onclick="startChallengeMode()">Challenge Mode</button>
+        </div>
+        <h1 class="score" style="display: none;"><span id="score-number">0</span></h1>
+        <h4 class="level" id="level-display" style="display: none;">Level: <span id="level-number">1</span></h4>
+        <div class="grid-container" id="grid-container" style="display: none;">
             <!-- Grid tiles will be generated here by JavaScript -->
         </div>
-        <div class="highscore">Highscore: <span id="highscore-number">0</span></div>
-        <div class="timer-circle" id="timer-circle">20s</div>
-        <button class="start-button" onclick="showModeSelection()">Tap to Start</button>
-        
-        <!-- Mode Selection Modal -->
-        <div class="mode-selection" id="mode-selection">
-            <h2>Select Game Mode</h2>
-            <button class="mode-button" onclick="startChallengeMode()">Challenge Mode</button>
-            <button class="mode-button" onclick="startEndlessMode()">Endless Mode</button>
-        </div>
-
+        <div class="highscore" style="display: none;">Highscore: <span id="highscore-number">0</span></div>
+        <div class="timer" id="timer" style="display: none;"></div>
         <div class="game-over">
-            <h2 id="win-message">Victory is Yours! 🏆 Keep Going Higher!</h2>
+            <h2 id="game-over-title">Game Over</h2>
             <p id="game-over-message"></p>
             <button class="restart-button" onclick="restartGame()">Restart</button>
             <button class="share-button" onclick="shareGame()">Share</button>
+            <button class="continue-button" onclick="continueGame()">Continue (Watch Ad)</button>
         </div>
 
         <div class="mode-toggle">
@@ -244,10 +233,9 @@
                 </label>
             </div>
         </div>
-
+        
         <div class="attribution" id="attribution-text">Made with ❤️ by H Brave for 🌏</div>
     </div>
-
     <script>
         let level = 1;
         let score = 0;
@@ -259,94 +247,77 @@
         let tiles = [];
         let gameInProgress = false;
         let restartCount = 0;
-        let endlessMode = false;  // Mode flag
-        let timer;
-        let timeLeft = 20;
-        let modeSwitched = false;  // Track theme switching for Challenge Mode
-        let challengeHighscore = localStorage.getItem('challengeHighscore') || 0;
-        let endlessHighscore = localStorage.getItem('endlessHighscore') || 0;
+        let currentMode = null;
+        let highscore = 0;
+        let continueUsed = false;
 
         const levelNumber = document.getElementById('level-number');
-        const levelHeading = document.getElementById('level-heading');
         const scoreNumber = document.getElementById('score-number');
         const gridContainer = document.getElementById('grid-container');
         const startButton = document.querySelector('.start-button');
-        const modeSelection = document.getElementById('mode-selection');
+        const modeSelection = document.querySelector('.mode-selection');
         const gameOverScreen = document.querySelector('.game-over');
         const gameOverMessage = document.getElementById('game-over-message');
-        const winMessage = document.getElementById('win-message');
+        const gameOverTitle = document.getElementById('game-over-title');
         const highscoreNumber = document.getElementById('highscore-number');
         const darkThemeLabel = document.getElementById('dark-theme-label');
         const attributionText = document.getElementById('attribution-text');
-        const timerCircle = document.getElementById('timer-circle');
+        const timerElement = document.getElementById('timer');
+
+        let highscoreEndless = localStorage.getItem('highscoreEndless') || 0;
+        let highscoreChallenge = localStorage.getItem('highscoreChallenge') || 0;
 
         function showModeSelection() {
             startButton.style.display = 'none';
-            modeSelection.classList.add('active');
-        }
-
-        function startChallengeMode() {
-            endlessMode = false;
-            modeSelection.classList.remove('active');
-            gameInProgress = true;
-            roundCount = 0;
-            level = 1;
-            rounds = 5;
-            timeLeft = 20;
-            timerCircle.style.display = 'block'; // Show timer only in Challenge Mode
-            levelHeading.style.display = 'block';
-            highscoreNumber.textContent = challengeHighscore;  // Show Challenge Mode highscore
-            generateGrid();
-            startTimer();
+            modeSelection.style.display = 'block';
         }
 
         function startEndlessMode() {
-            endlessMode = true;
-            modeSelection.classList.remove('active');
-            gameInProgress = true;
+            currentMode = 'endless';
+            modeSelection.style.display = 'none';
+            gridContainer.style.display = 'grid';
+            scoreNumber.style.display = 'block';
+            document.querySelector('.highscore').style.display = 'block';
+            highscore = highscoreEndless;
+            highscoreNumber.textContent = highscoreEndless;
+            startGame();
+        }
+
+        function startChallengeMode() {
+            currentMode = 'challenge';
+            modeSelection.style.display = 'none';
+            gridContainer.style.display = 'grid';
+            scoreNumber.style.display = 'block';
+            document.querySelector('.highscore').style.display = 'block';
+            highscore = highscoreChallenge;
+            highscoreNumber.textContent = highscoreChallenge;
+            document.getElementById('level-display').style.display = 'block';
+            startGame();
+        }
+
+        function startGame() {
             roundCount = 0;
+            level = 1;
+            rounds = 5;
             gridSize = 2;
-            levelHeading.style.display = 'none';  // Hide the level heading for Endless Mode
-            highscoreNumber.textContent = endlessHighscore;  // Show Endless Mode highscore
-            timerCircle.style.display = 'none';  // Hide timer for Endless Mode
+            continueUsed = false;
+            score = 0;
             generateGrid();
         }
 
         function generateGrid() {
-            if (!endlessMode) {
-                if (roundCount >= rounds) {
-                    level++;
-                    if (level <= 3) {
-                        gridSize = level + 1;  // 2x2 for level 1, 3x3 for level 2, 4x4 for level 3
-                        rounds = 5;
-                    } else {
-                        gridSize = Math.min(9, gridSize + 1);  // Max grid size capped at 9x9
-                        rounds = (level === 4) ? 7 : (level * 2 - 1);
-                    }
-                    roundCount = 0;
-                    adjustTimer();  // Adjust timer as score increases in Challenge Mode
-                }
-            } else {
-                // Endless Mode logic: increase grid size to 7x7, then stay at 7x7 indefinitely
-                if (gridSize < 7) {
-                    gridSize++;
-                } else {
-                    gridSize = 7;
-                }
-
-                // Round settings for Endless Mode
-                if (gridSize === 2) rounds = 9;
-                else if (gridSize === 3) rounds = 18;
-                else if (gridSize === 4) rounds = 36;
-                else if (gridSize === 5) rounds = 45;
-                else if (gridSize === 6) rounds = 54;
-                else if (gridSize === 7) rounds = Infinity;  // Infinite rounds for 7x7
+            // Adjust grid based on current mode
+            if (currentMode === 'endless') {
+                adjustGridForEndless();
+            } else if (currentMode === 'challenge') {
+                adjustGridForChallenge();
             }
 
-            const tileSize = Math.min(80, 320 / gridSize);
+            // Generate tiles and assign colors
+            const tileSize = Math.min(80, 320 / gridSize); // Adjust tile size
             gridContainer.style.gridTemplateColumns = `repeat(${gridSize}, ${tileSize}px)`;
             gridContainer.style.gridTemplateRows = `repeat(${gridSize}, ${tileSize}px)`;
-            gridContainer.innerHTML = '';  // Clear previous tiles
+            gridContainer.innerHTML = ''; // Clear the previous grid
             roundCount++;
 
             const baseColor = getRandomColor();
@@ -357,10 +328,7 @@
                 tile.style.width = `${tileSize}px`;
                 tile.style.height = `${tileSize}px`;
                 tile.style.borderRadius = '5px';
-
-                // Assign background color and adjust for variation
                 tile.style.backgroundColor = index === correctTile ? adjustColor(baseColor, variation) : baseColor;
-
                 tile.addEventListener('click', () => onTileClick(index));
                 gridContainer.appendChild(tile);
                 return tile;
@@ -369,114 +337,101 @@
             updateLevelAndScore();
         }
 
+        function adjustGridForEndless() {
+            // Grid size and rounds progression logic for endless mode
+            if (roundCount >= rounds) {
+                gridSize = Math.min(7, gridSize + 1);
+                rounds = gridSize === 2 ? 9 :
+                         gridSize === 3 ? 18 :
+                         gridSize === 4 ? 27 :
+                         gridSize === 5 ? 36 :
+                         gridSize === 6 ? 45 : rounds + 1;
+                roundCount = 0;
+            }
+        }
+
+        function adjustGridForChallenge() {
+            // Standard grid progression logic for challenge mode
+            if (roundCount >= rounds) {
+                level++;
+                if (level <= 3) {
+                    gridSize = level + 1;
+                    rounds = 5;
+                } else {
+                    gridSize = Math.min(9, gridSize + 1);
+                    rounds = (level === 4) ? 7 : (level * 2 - 1);
+                }
+                roundCount = 0;
+            }
+        }
+
         function onTileClick(index) {
             if (!gameInProgress) return;
-
             if (index === correctTile) {
                 score += 1;
                 updateScoreColor();
                 animateCorrectTile(tiles[index]);
-
-                if (!endlessMode) {
-                    if (score >= 150) {
-                        displayWinMessage();
-                        if (score > challengeHighscore) {
-                            challengeHighscore = score;
-                            localStorage.setItem('challengeHighscore', challengeHighscore);
-                            highscoreNumber.textContent = challengeHighscore;
-                        }
-                        return;
-                    }
+                if (score >= 150 && currentMode === 'challenge') {
+                    displayWinMessage();
                 } else {
-                    if (score > endlessHighscore) {
-                        endlessHighscore = score;
-                        localStorage.setItem('endlessHighscore', endlessHighscore);
-                        highscoreNumber.textContent = endlessHighscore;
-                    }
+                    setTimeout(generateGrid, 500); // Generate a new grid after a short delay
                 }
-
-                setTimeout(generateGrid, 500);
             } else {
                 gameOver();
             }
         }
 
-        function startTimer() {
-            clearInterval(timer);
-            timer = setInterval(() => {
-                timeLeft--;
-                timerCircle.textContent = `${timeLeft}s`;
-                if (timeLeft <= 0) {
-                    clearInterval(timer);
-                    gameOver();
-                }
-            }, 1000);
-        }
-
-        function adjustTimer() {
-            if (score > 100) {
-                timeLeft = 10;
-            } else if (score > 50) {
-                timeLeft = 15;
-            } else {
-                timeLeft = 20;
-            }
-            timerCircle.textContent = `${timeLeft}s`;
-        }
-
         function displayWinMessage() {
             gameInProgress = false;
             gameOverScreen.classList.add('active');
-            winMessage.textContent = "🎉 Victory is Yours! 🏆 Keep Going Higher!";
-        }
-
-        function updateLevelAndScore() {
-            if (!endlessMode) {
-                levelNumber.textContent = level;
-            }
-            scoreNumber.textContent = score;
-        }
-
-        function updateScoreColor() {
-            const baseColor = tiles[correctTile].style.backgroundColor;
-            scoreNumber.style.color = baseColor;  // In Endless Mode, match score color to tiles
+            gameOverTitle.textContent = "🪩🎇 You Did It! 😮🎉";
+            gameOverMessage.textContent = `You reached the maximum score of 150! Share your achievement and restart!`;
         }
 
         function gameOver() {
             gameInProgress = false;
             gameOverScreen.classList.add('active');
-            updateGameOverMessage();
+            if (!continueUsed) {
+                document.querySelector('.continue-button').style.display = 'inline-block';
+            } else {
+                document.querySelector('.continue-button').style.display = 'none';
+            }
 
+            gameOverMessage.textContent = "You selected the wrong tile. Try again or continue!";
             if (restartCount > 9) {
                 alert("😣 Uh-huh! Try relaxing your eyes for 10 minutes! 😌");
             }
         }
 
-        function updateGameOverMessage() {
-            const messages = [
-                "🔍 You're so close! Try again and beat your high score! 🎯",
-                "💪 Just missed it! You’ve got what it takes, try again! 🔁",
-                "🏃‍♂️ Almost there! A few more tries and victory is yours! 🏆",
-                "🔥 Don’t stop now! The next level is waiting for you! 🚀",
-                "👏 Great effort! Keep going, the next challenge awaits you! 🎮",
-                "🌟 You’ve mastered this far, now push through to the top! 🔝",
-                "⚡ Your progress is amazing! Restart and climb even higher! ⏫",
-                "💥 Unstoppable! Try again, and conquer the toughest levels yet! 🗻",
-                "🎯 Challenge accepted? Keep playing and dominate the leaderboard! 🏅",
-                "🏁 Almost there! One more round and you’ll break through! 🥇",
-            ];
-            const randomMessage = messages[Math.floor(Math.random() * messages.length)];
-            gameOverMessage.textContent = randomMessage;
+        function continueGame() {
+            continueUsed = true;
+            gameOverScreen.classList.remove('active');
+            // Logic to watch ad here, and after ad resumes the game
+            generateGrid(); // Resumes from the current round
         }
 
-        function restartGame() {
-            restartCount++;
-            gameOverScreen.classList.remove('active');
-            if (endlessMode) {
-                startEndlessMode();
+        function updateLevelAndScore() {
+            levelNumber.textContent = level;
+            scoreNumber.textContent = score;
+        }
+
+        function updateScoreColor() {
+            if (currentMode === 'endless') {
+                scoreNumber.style.color = gridContainer.children[correctTile].style.backgroundColor;
             } else {
-                startChallengeMode();
+                const maxScore = 150;
+                const colorGradient = [
+                    'rgb(255,0,0)', 'rgb(255,128,0)', 'rgb(255,255,0)',
+                    'rgb(128,255,0)', 'rgb(0,255,0)'
+                ];
+                const colorIndex = Math.min(Math.floor((score / maxScore) * colorGradient.length), colorGradient.length - 1);
+                scoreNumber.style.color = colorGradient[colorIndex];
             }
+        }
+
+        function animateCorrectTile(tile) {
+            tile.classList.add('correct');
+            setTimeout(() => tile.classList.remove('correct'), 500);
         }
 
         function shareGame() {
@@ -488,34 +443,19 @@
             navigator.share(shareData).catch(console.error);
         }
 
+        function restartGame() {
+            restartCount++;
+            gameOverScreen.classList.remove('active');
+            startGame();
+        }
+
         function toggleMode() {
             const body = document.body;
             body.classList.toggle('light-mode');
             body.classList.toggle('dark-mode');
-            darkThemeLabel.style.color = body.classList.contains('light-mode') ? '#333' : '#fff';  // Change text color on theme toggle
-            attributionText.style.color = body.classList.contains('light-mode') ? '#333' : '#fff';  // Change attribution color on theme toggle
+            darkThemeLabel.style.color = body.classList.contains('light-mode') ? '#333' : '#fff'; // Change text color on theme toggle
+            attributionText.style.color = body.classList.contains('light-mode') ? '#333' : '#fff'; // Change attribution color on theme toggle
         }
-
-        // Random theme switching in Challenge Mode
-        function switchThemeRandomly() {
-            if (!endlessMode && gameInProgress) {
-                setInterval(() => {
-                    if (roundCount % 4 === 0 && !modeSwitched) {
-                        toggleMode();  // Randomly switch between dark and light mode
-                        modeSwitched = true;
-                    } else if (roundCount % 5 === 0 && modeSwitched) {
-                        toggleMode();  // Switch back after 5 rounds
-                        modeSwitched = false;
-                    }
-                }, 1000);
-            }
-        }
-
-        // Initiate with dark mode
-        document.getElementById('mode-switch').checked = true;
-
-        // Start theme switching in Challenge Mode
-        switchThemeRandomly();
     </script>
 </body>
 </html>
